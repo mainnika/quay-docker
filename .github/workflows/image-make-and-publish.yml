@@ -51,6 +51,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           platforms: linux/amd64,linux/arm64
+          context: .
           push: ${{ github.event_name != 'pull_request' && github.ref_name == 'master' }}
           tags: ${{ matrix.version }}
 
