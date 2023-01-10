@@ -1,0 +1,61 @@
+name: Docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+env:
+  QUAY_REPO: quay/quay
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.actor }}/quay
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['v3.8.0']
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.QUAY_REPO }}}
+          ref: ${{ matrix.version }}
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@main
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v2
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' && github.ref_name == 'master' }}
+          tags: ${{ matrix.version }}
+
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' && github.ref_name == 'master' && !github.event.repository.private }}
+        run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
+        env:
+          COSIGN_EXPERIMENTAL: "true"
