@@ -52,11 +52,11 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           context: .
-          push: ${{ github.event_name != 'pull_request' && github.ref_name == 'master' }}
+          push: ${{ github.event_name != 'pull_request' && github.ref_name == 'main' }}
           tags: ${{ matrix.version }}
 
       - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' && github.ref_name == 'master' && !github.event.repository.private }}
+        if: ${{ github.event_name != 'pull_request' && github.ref_name == 'main' && !github.event.repository.private }}
         run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
         env:
           COSIGN_EXPERIMENTAL: "true"
