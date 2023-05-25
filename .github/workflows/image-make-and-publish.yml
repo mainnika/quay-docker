@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ['v3.8.0']
+        version: ['v3.8.8']
     permissions:
       contents: read
       packages: write
